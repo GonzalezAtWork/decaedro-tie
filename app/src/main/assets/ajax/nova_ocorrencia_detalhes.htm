@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+	<script language="javascript">
+		var itensVistoria = "";
+		runScript = function (){
+			var ponto = eval('('+ parametro +')');
+			$('#id_ponto').val(ponto['id_ponto']);
+			$('#txt_titulo').html(ponto['endereco']);
+			$('#otima').val(ponto['otima']);
+			$('#simak').val(ponto['simak']);
+			$('#txt_detalhes').html('Ocorrência: Não Conformidade<br/>Nº Ótima: '+ ponto['otima'] + '<br/>Simak: '+ ponto['simak'] + ' - ' + ponto['tipo']);
+			itensVistoria = "";
+			$('#observacaovistoria').val("");		
+			subparametro = 'NOVA';
+			parametro = '0';
+			montaTipos();
+		}
+		function montaTipos(){
+			var q = "select * from itenstipo";
+			$.sql.query(q,{ success:function(result){
+				var html = "";
+				totalTipos = result.length;
+				for(var i = 0; i < result.length; i++){
+					item = result.item(i);
+					if(item['id_tipoitem'] != 0){
+						html = $('#itens').html();
+						html += '<div data-role="fieldcontain" id="titulo_tipo'+ item['id_tipoitem'] +'" name="titulo_tipo'+ item['id_tipoitem'] +'">';
+						html += '<fieldset data-role="controlgroup" data-type="vertical"><legend>'+ item['nome'] +':</legend>';
+						html += '<div id="tipo'+ item['id_tipoitem'] +'" name="tipo'+ item['id_tipoitem'] +'"></div>';
+						html += '</fieldset>';
+						html += '</div>';
+						$('#itens').html(html);
+
+						var cw = '<input name="iv_***id_item***" id="iv_***id_item***" obrigafoto="***foto***" onclick="chkFoto(\'***id_item***\')"  data-theme="c" type="checkbox"><label for="iv_***id_item***"><small>&nbsp;<br/></small>***nome***<small><br/>&nbsp;</small></label>'
+									
+						$('#tipo'+ item['id_tipoitem']).sql('load', {callback: montouItens, table: 'vistoriasitens', condition:" id_tipoitem = '" + item['id_tipoitem'] +"'" , customWrap:cw });
+					}
+				}
+				html = $('#itens').html();
+				//html += '<div data-role="fieldcontain" style="display:none">';
+				html += '<div data-role="fieldcontain" id="titulo_tipo'+ totalTipos +'" name="titulo_tipo'+ totalTipos +'">';
+				html += '<fieldset data-role="controlgroup" data-type="vertical"><legend>Outros:</legend>';
+				html += '<div id="tipo' + totalTipos + '" name="tipo' + totalTipos + '"></div>';
+				html += '</fieldset>';
+				html += '</div>';
+				$('#itens').html(html);
+			} } )
+		}
+		var totalTipos = 0;
+		var counter = 0;
+		function montouItens(retorno){
+			counter++
+			if(retorno.html() != ""){
+				$('#tipo'+ counter).html( retorno.html() )
+			}else{
+				$('#titulo_tipo'+ counter).hide();
+			}
+			if(counter == totalTipos - 1){
+				var cw = '<input id="iv_***id_item***" name="iv_***id_item***" data-theme="c" type="checkbox"><label for="iv_***id_item***"><small>&nbsp;<br/></small>***nome***<small><br/>&nbsp;</small></label>'
+				$('#tipo'+ totalTipos).sql('load', {
+					callback: montouItens,
+					failure: montouItens,
+					table: 'vistoriasitens', 
+					condition:" id_tipoitem = '0' and id_item in ("+ itensVistoria +")" , 
+					customWrap:cw 
+				});
+			}
+			if(counter == totalTipos){
+				finalizou();
+			}
+		}
+		function finalizou(){			
+			var itensChecked = itensVistoria.split(', ');
+			for( var ble in itensChecked){
+				$('#iv_' + itensChecked[ ble ] ).attr('checked','checked');
+			}
+			$('#conteudo').trigger('create');
+			document.getElementById('detalhes').style.display = 'block';	
+		}
+
+
+		var arr_iv = [];
+		function salvar(){
+			loading();
+			$.ajax({
+				type: "POST",
+				url: URL_WEBSERVICE + "ocorrencia_insert.php",
+				data: {
+					token:					$('#token').val(),
+					id_ponto:				$('#id_ponto').val()
+				},
+				success: function(response) {
+					var obj = eval( '(' + response + ')' );
+					subparametro = obj['id_ocorrencia'];
+					executa();
+				},
+				error: function(xmlHttpRequest, textStatus, errorThrow){
+					// Erro 324:net::ERR_EMPTY_RESPONSE					
+					if(xmlHttpRequest.readyState == 0 || xmlHttpRequest.status == 0) {
+						alert(textStatus + ': '+ errorThrow);
+					}
+					continua();
+				}
+			});
+
+		}
+		function executa(){
+			arr_iv = [];
+			$("input:checkbox:checked").each(function(){
+				arr_iv.push( $(this).attr('name').split('iv_').join('') );
+			});
+			var dados = {
+				id_ocorrencia:		subparametro,
+				id_vistoria:		parametro,
+				observacaovistoria:	$('#observacaovistoria').val(),
+				//fotovistoria:		$('#img_content').html().split('<img src="data:image/jpeg;base64,').join('').split('" width="400">').join(''),
+				itensVistoria:		arr_iv.join(', ')
+			};
+			updateOnline();
+		}
+		function updateOnline(){
+			var dados = {
+				id_ocorrencia:		subparametro,
+				id_vistoria:		parametro,
+				observacaovistoria:	$('#observacaovistoria').val(),
+				//fotovistoria:		$('#img_content').html().split('<img src="data:image/jpeg;base64,').join('').split('" width="400">').join(''),
+				itensVistoria:		arr_iv.join(', ')
+			};
+			var q = "";
+			q += " update ocorrencias set ";
+			q += "	gerar_os = 'true', ";
+			q += "	observacaovistoria = '"+ dados.observacaovistoria +"', ";
+			//q += "	fotovistoria = '"+ dados.fotovistoria +"', ";
+			q += "	itensVistoria = '"+ dados.itensVistoria +"', ";
+			q += "	vistoriada = 'true' ";
+			q += " where id_ocorrencia = " + dados.id_ocorrencia + ";";
+
+			$( "img" ).each(function( index ) {
+				if( $(this).attr('foto') == 'ok' ){
+					var nq = "";
+					nq += " insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp) values( ";
+					nq += " '"+ $(this).attr('src').split('data:image/jpeg;base64,').join('') +"', ";
+					nq += " '"+ $(this).attr('data') +"', ";
+					nq += " '"+ $(this).attr('id_item') +"', ";
+					nq += " '"+ $(this).attr('id_vistoria') +"', ";
+					nq += " '"+ $(this).attr('id_os') +"', ";
+					nq += " '"+ $(this).attr('id_ocorrencia') +"', ";
+					nq += " '"+ $(this).attr('id_ponto') +"', ";
+					nq += " '"+ $(this).attr('nome') +"', ";
+					nq += " '"+ $(this).attr('stamp') +"' ";
+					nq += " );";
+					nq = nq.split('NOVA').join(subparametro);
+					q += nq;
+				}
+			});
+
+			$.ajax({
+				type: "POST",
+				url: URL_WEBSERVICE + "exec_query.php?rand=" +(new Date().getTime()),
+				data: {
+					query:   q
+				},
+				success: function(json){
+					//alert(json);
+					continua();
+				},
+				error: function(xmlHttpRequest, textStatus, errorThrow){
+					// Erro 324:net::ERR_EMPTY_RESPONSE					
+					if(xmlHttpRequest.readyState == 0 || xmlHttpRequest.status == 0) {
+						alert(textStatus + ': '+ errorThrow);
+					}
+					continua();
+				}
+			});
+		}
+		function continua(){
+			alert('Nova ocorrência criada com sucesso!');
+			abreTela('nova_ocorrencia');
+		}
+		function chkFoto(id_item){
+			if( typeof(id_item) != "undefined" ){
+				var obj = document.getElementById('iv_' + id_item);
+				if( obj.checked && obj.getAttribute("obrigafoto") == "true" ){
+					//tiraFoto(nome, id_ponto, id_ocorrencia, id_os, id_vistoria, id_item, otima, simak){
+					var nome = subparametro +"_"+ id_item;
+					tiraFoto( nome, $('#id_ponto').val(), subparametro, '0', parametro, id_item, $('#otima').val(), $('#simak').val() );
+				}
+			}		
+		}
+		function man_tiraFoto(){
+			//tiraFoto(nome, id_ponto, id_ocorrencia, id_os, id_vistoria, id_item, otima, simak){
+			var id_item = "0";
+			var nome = subparametro +"_"+ id_item;
+			tiraFoto( nome, $('#id_ponto').val(), subparametro, '0', parametro, id_item, $('#otima').val(), $('#simak').val() );
+		}
+	</script>
+	<input type="hidden" name="otima" id="otima" value=""/>
+	<input type="hidden" name="simak" id="simak" value=""/>
+	<div id="detalhes" data-role="content" style="display:none">
+		<h4 align="center" name="txt_detalhes" id="txt_detalhes">&nbsp;</h4>
+		<h3 align="center" name="txt_titulo" id="txt_titulo">&nbsp;</h3>
+		<div id="itens" name="itens"></div>
+		<div data-role="fieldcontain">
+            <label for="observacaovistoria">Observações:</label>
+            <textarea name="observacaovistoria" id="observacaovistoria" placeholder="" style="height:80px"></textarea>
+        </div>
+		<div data-role="fieldcontain">
+			<div id="img_content" name="img_content" align="center"></div>
+        </div>
+	</div>
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b">
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('nova_ocorrencia')" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b">
+				<a data-role="button" onclick="man_tiraFoto()" data-mini="true" data-icon="star" data-iconpos="top">
+					Fotografia
+				</a>
+			</div>
+			<div class="ui-block-c">
+				<a data-role="button" onclick="salvar()" data-icon="check" data-iconpos="top" data-mini="true">
+					Concluir
+				</a>
+			</div>
+		</div>
+    </div>
+</div>

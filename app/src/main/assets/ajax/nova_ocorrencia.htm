@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+	<script language="javascript">
+		runScript = function (){
+			document.getElementById('detalhes').style.display = 'block';	
+		}
+		function procurarSimak(){
+			if( $('#numero').val() != "" ){
+				loading();
+				$.ajax({
+					type: "POST",
+					//timeout: 2000,
+					cache: false,
+					url: URL_WEBSERVICE + "busca_ponto.php?rand=" +(new Date().getTime()),
+					data: {
+						codigo:   $('#numero').val()
+					},
+					success: function(json){
+						if(json == 'null'){
+							erro( 'Número '+ $('#numero').val() +' não encontrado!' );
+						}else{
+							abreTela('nova_ocorrencia_detalhes', json);
+						}
+					},
+					error: function(jqXHR, textStatus, errorThrow){
+						//erro( textStatus + ': '+ errorThrow );
+						erro("Atenção: \bInternet instável\b!\nTente novamente.");
+					}
+				});
+			}
+		}
+		function erro( msg ){
+			alert(msg);
+			//alert('Número '+ $('#numero').val() +' não encontrado!');
+			$('#numero').val('');
+			loading('hide');
+		}
+	</script>
+	<div id="detalhes" data-role="content" style="display:none">
+		<h3 align="center" name="txt_titulo" id="txt_titulo">Nova Ocorrência</h3>
+		<h4 align="center" name="txt_detalhes" id="txt_detalhes">Procurar Ponto de Parada</h4>
+		<div data-role="fieldcontain">
+            <label for="numero">Número do Ponto:</label>
+            <input type="tel" name="numero" id="numero" placeholder=""/>
+        </div>
+	</div>
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b">
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('tarefas')" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b">
+				<a data-role="button" onclick="procurarSimak()" data-icon="check" data-iconpos="top" data-mini="true">
+					Procurar
+				</a>
+			</div>
+			<div class="ui-block-c" style="padding-right:5px">&nbsp;</div>
+		</div>
+    </div>
+</div>

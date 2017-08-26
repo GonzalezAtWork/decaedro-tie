@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+<script language="javascript">
+runScript = function (){
+	chk_tabelas_counter = 0;
+	// se tiver conexao, sincroniza, do contrario checa o login;
+	checkConnection(checaTabelas, chkLogado);
+}
+var chk_tabelas_counter = 0;
+var notSync = [
+	'usuarios',
+	'vistoriasitens',
+	'itenstipo'
+];
+var syncWraps = {
+	fotografias: 'insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp) values(\'***base64***\',\'***data***\',\'***id_item***\',\'***id_vistoria***\',\'***id_os***\',\'***id_ocorrencia***\',\'***id_ponto***\',\'***nome***\',\'***stamp***\');',
+	manutencoes: 'update oss set hs_rodados = \'***hs_rodados***\', hs_chegada = \'***hs_chegada***\', hs_saida = \'***hs_saida***\', km_rodados = \'***km_rodados***\', km_chegada = \'***km_chegada***\', km_saida = \'***km_saida***\', executada = \'***executada***\', andamento = \'***andamento***\' where id_os = ***id_os***;', 
+	manutencoespontos: 'update ocorrencias set observacaomanutencao = \'***observacaomanutencao***\', fotomanutencao = \'***fotomanutencao***\', itensmanutencao = \'***itensmanutencao***\', executada = \'***executada***\' where id_ocorrencia = ***id_ocorrencia***;',
+	vistorias: 'update vistorias set hs_rodados = \'***hs_rodados***\', hs_chegada = \'***hs_chegada***\', hs_saida = \'***hs_saida***\', km_rodados = \'***km_rodados***\', km_chegada = \'***km_chegada***\', km_saida = \'***km_saida***\', executada = \'***executada***\', andamento = \'***andamento***\' where id_vistoria = ***id_vistoria***;', 
+	vistoriaspontos: 'update ocorrencias set gerar_os = \'***gerar_os***\', observacaovistoria = \'***observacaovistoria***\', fotovistoria = \'***fotovistoria***\', itensvistoria = \'***itensvistoria***\', vistoriada = \'***vistoriada***\' where id_ocorrencia = ***id_ocorrencia***;'
+};
+function checaTabelas(){
+	loading();
+	var tbl = tabelas[chk_tabelas_counter]
+	var customWrap = syncWraps[tbl];
+	if(tabelas.length != chk_tabelas_counter){
+		chk_tabelas_counter++
+		if( notSync.indexOf(tbl) == -1 ){
+			$('#query').sql('load', {
+				callback: checaTabelas, 
+				failure: checaTabelas ,
+				table: tbl, 
+				customWrap: customWrap
+			});
+		}else{
+			checaTabelas();
+		}
+	}else{
+		var n_html = $('#query').html();
+		n_html = n_html.split("'null'").join('null');
+		$('#query').html( n_html );
+		envia( $('#query').html() );
+	}
+}
+
+function envia(q){
+	checagem = "select 'OK' as sincronizado";
+	resposta = '{"sincronizado":"OK"}';
+	q += checagem;
+	$.ajax({
+		type: "POST",
+		url: URL_WEBSERVICE + "exec_query.php",
+		data: {
+			query: q
+		},
+		success: function(json){
+			if(json == resposta){
+				Logout(recebe);
+			}else{
+				alert('Erro na sincronia: ' + json);
+			}
+		}
+	});
+}
+function recebe(){
+	var imei = "";
+	if(typeof(Android) != "undefined"){
+		imei = Android.getIMEI();
+	}
+	$.ajax({
+		type: "POST",
+		url: URL_WEBSERVICE + "sincronizar.php",
+		data: {
+			id_usuario: $("#id_usuario").val(),
+			device: imei
+		},
+		success: function(json){
+			// erro com uso de memoria pra eval?
+			//var arr = eval(json);
+			var resposta = json;
+			resposta = resposta.split('["').join('');
+			resposta = resposta.split('"]').join('');
+			var arr = resposta.split('","');
+			total_sync = arr.length;
+			$.sql.query( arr ,{ failure:falha, success:sucesso } );
+		}
+	});
+}
+
+function sucesso(result){
+	exec_sync++;
+	continua();
+}
+function falha(result){
+	exec_sync++;
+	//alert('Erro:' + result)
+	continua();
+}
+var total_sync = 0;
+var exec_sync = 0;
+function continua(){
+	if(total_sync == exec_sync){
+		total_sync = 0;
+		exec_sync = 0;
+		var q = "UPDATE usuarios set logado_mobile = 'true' where id_usuario = " +  $("#id_usuario").val();
+		$.sql.query(q,{ success:function(result){
+			// Tudo perfeito, logar e vai pra lista de tarefas
+			chkLogado();
+		} } );
+	}
+}
+</script>
+<textarea id="query" name="query" rows="100" style="display:none"></textarea>
+</div>

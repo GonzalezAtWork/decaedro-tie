@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<div>
+	<script language="javascript">
+		runScript = function (){
+			doRun();
+		}
+		var run = 0;
+		function doRun(){
+			var linhaFormatada = "";
+			var linhaFormatada1 = "";
+			var linhaFormatada2 = "";
+			var linhaFormatada3 = "";
+			var linhaFormatada4 = "";
+			var linhaFormatada5 = "";
+			var linhaFormatada6 = "";
+			var linhaFormatada7 = "";
+			var linhaFormatada8 = "";
+			var linhaFormatada9 = "";
+			var linhaClean = "";
+
+			linhaFormatada += '<li ';
+			linhaFormatada += '		data-theme="e" ';
+			linhaFormatada += '		data-icon="check" ';
+			linhaFormatada += '		data-corners="false" ';
+			linhaFormatada += '		data-shadow="false" ';
+			linhaFormatada += '		data-iconshadow="true" ';
+			linhaFormatada += '		data-wrapperels="div" ';
+			linhaFormatada += '		data-iconpos="right" ';
+			linhaFormatada += '		class="ui-btn ui-btn-icon-right ui-li-has-arrow ui-li ui-btn-hover-e"';
+			linhaFormatada += '>';
+			linhaFormatada += '		<div class="ui-btn-inner ui-li">';
+			linhaFormatada += '			<div class="ui-btn-text">';
+			linhaFormatada += '			***padrao***';
+			linhaFormatada += '			</div>';
+			linhaFormatada += '			<span class="ui-icon ui-icon-arrow-r ui-icon-shadow">&nbsp;</span>';
+			linhaFormatada += '		</div>';
+			linhaFormatada += '</li>';
+
+
+			linhaClean = linhaFormatada.split('***padrao***').join('<center><a href="#" data-transition="slide" class="ui-link-inherit">Nenhuma Tarefa Encontrada.</a></center>');
+			linhaClean = linhaClean.split('<span class="ui-icon ui-icon-arrow-r ui-icon-shadow">&nbsp;</span>').join('');
+			linhaClean = linhaClean.split('data-theme="e"').join('data-theme="c"');
+			linhaClean = linhaClean.split('ui-btn-hover-e').join('ui-btn-hover-c');
+			linhaClean = linhaClean.split('ui-icon-arrow-r').join('ui-icon-check');
+
+			linhaFormatada1 = linhaFormatada.split('***padrao***').join('<a onclick="abreTela(\'manutencao\',\'***id_os***\')" data-transition="slide" class="ui-link-inherit">***id_formatado*** <small>[***roteiro***: ***qtd_pontos*** pontos]</small></a>');
+			linhaFormatada2 = linhaFormatada1;
+			linhaFormatada2 = linhaFormatada2.split('data-theme="e"').join('data-theme="c"');
+			linhaFormatada2 = linhaFormatada2.split('ui-btn-hover-e').join('ui-btn-hover-c');
+			linhaFormatada2 = linhaFormatada2.split('ui-icon-arrow-r').join('ui-icon-check');
+			linhaFormatada3 = linhaFormatada1;
+			linhaFormatada3 = linhaFormatada3.split('data-theme="e"').join('data-theme="b"');
+			linhaFormatada3 = linhaFormatada3.split('ui-btn-hover-e').join('ui-btn-hover-b');
+			linhaFormatada3 = linhaFormatada3.split('ui-icon-arrow-r').join('ui-icon-star');
+
+			linhaFormatada4 = linhaFormatada.split('***padrao***').join('<a onclick="abreTela(\'vistoria\',\'***id_vistoria***\')" data-transition="slide" class="ui-link-inherit">***id_formatado*** <small>[***roteiro***: ***qtd_pontos*** pontos]</small></a>');
+			linhaFormatada5 = linhaFormatada4;
+			linhaFormatada5 = linhaFormatada5.split('data-theme="e"').join('data-theme="c"');
+			linhaFormatada5 = linhaFormatada5.split('ui-btn-hover-e').join('ui-btn-hover-c');
+			linhaFormatada5 = linhaFormatada5.split('ui-icon-arrow-r').join('ui-icon-check');
+			linhaFormatada6 = linhaFormatada4;
+			linhaFormatada6 = linhaFormatada6.split('data-theme="e"').join('data-theme="b"');
+			linhaFormatada6 = linhaFormatada6.split('ui-btn-hover-e').join('ui-btn-hover-b');
+			linhaFormatada6 = linhaFormatada6.split('ui-icon-arrow-r').join('ui-icon-star');
+
+			linhaFormatada7 = linhaFormatada.split('***padrao***').join('<a onclick="abreTela(\'publicidade\',\'***id_os***\')" data-transition="slide" class="ui-link-inherit">***id_formatado*** <small>[***roteiro***: ***qtd_pontos*** pontos]</small></a>');
+			linhaFormatada8 = linhaFormatada7;
+			linhaFormatada8 = linhaFormatada8.split('data-theme="e"').join('data-theme="c"');
+			linhaFormatada8 = linhaFormatada8.split('ui-btn-hover-e').join('ui-btn-hover-c');
+			linhaFormatada8 = linhaFormatada8.split('ui-icon-arrow-r').join('ui-icon-check');
+			linhaFormatada9 = linhaFormatada7;
+			linhaFormatada9 = linhaFormatada9.split('data-theme="e"').join('data-theme="b"');
+			linhaFormatada9 = linhaFormatada9.split('ui-btn-hover-e').join('ui-btn-hover-b');
+			linhaFormatada9 = linhaFormatada9.split('ui-icon-arrow-r').join('ui-icon-star');
+
+			run++
+			//alert('run:' + run)
+			switch( run ){
+				case 1: 
+					$('#manutencao').sql('load', {callback: doRun, failure: doRun, table: 'manutencoes', condition:"andamento = 'true'", customWrap: linhaFormatada3});
+					break;
+				case 2:
+					$('#manutencao').sql('load', {callback: doRun, failure: doRun, table: 'manutencoes', condition:"executada = 'false' and andamento = 'false'", customWrap: linhaFormatada1});	
+					break;
+				case 3:
+					$('#manutencao').sql('load', {callback: doRun, failure: doRun, table: 'manutencoes', condition:"executada = 'true' and andamento = 'false'", customWrap: linhaFormatada2});
+					break;
+				case 4:
+					$('#vistoria').sql('load', {callback: doRun, failure: doRun, table: 'vistorias', condition:"andamento = 'true'", customWrap: linhaFormatada6});
+					break;
+				case 5:
+					$('#vistoria').sql('load', {callback: doRun, failure: doRun, table: 'vistorias', condition:"executada = 'false' and andamento = 'false'", customWrap: linhaFormatada4});	
+					break;
+				case 6:
+					$('#vistoria').sql('load', {callback: doRun, failure: doRun, table: 'vistorias', condition:"executada = 'true' and andamento = 'false'", customWrap: linhaFormatada5});	
+					break;
+				case 7: 
+					$('#publicidade').sql('load', {callback: doRun, failure: doRun, table: 'publicidades', condition:"andamento = 'true'", customWrap: linhaFormatada9});
+					break;
+				case 8:
+					$('#publicidade').sql('load', {callback: doRun, failure: doRun, table: 'publicidades', condition:"executada = 'false' and andamento = 'false'", customWrap: linhaFormatada7});	
+					break;
+				case 9:
+					$('#publicidade').sql('load', {callback: doRun, failure: doRun, table: 'publicidades', condition:"executada = 'true' and andamento = 'false'", customWrap: linhaFormatada8});
+					break;
+				default:			
+					var telas = ['manutencao','vistoria','publicidade'];
+					for( tela in telas ){
+						if($('#' + telas[tela]).html() == ""){
+							$('#' + telas[tela]).html(linhaClean)
+						}
+					}
+			}
+
+		}
+		function novaOcorrencia(){
+			checkConnection(
+				function(){abreTela('nova_ocorrencia')}, 
+				function(){alert('É necessário estar conectado à internet para realizar esta operação.')}
+			);
+		}
+	</script>
+    <div id="tarefas" data-role="content">
+		<h2 align="center">Tarefas Programadas</h2>
+		<div data-role="collapsible-set">
+            <div data-role="collapsible" data-collapsed="true">
+                <h3>
+                    Manutenção
+                </h3>
+                <ul id="manutencao" name="manutencao" data-role="listview" data-divider-theme="" data-inset="false"></ul>
+            </div>
+            <div data-role="collapsible" data-collapsed="true">
+                <h3>
+                    Vistorias
+                </h3>
+                <ul id="vistoria" name="vistoria" data-role="listview" data-divider-theme="" data-inset="false"></ul>
+            </div>
+            <div data-role="collapsible" data-collapsed="true">
+                <h3>
+                    Publicidade
+                </h3>
+                <ul id="publicidade" name="publicidade" data-role="listview" data-divider-theme="" data-inset="false"></ul>
+            </div>
+        </div>
+		<!-- <a data-role="button" onclick="novaOcorrencia()">Não Conformidade</a> -->
+   </div>
+</div>

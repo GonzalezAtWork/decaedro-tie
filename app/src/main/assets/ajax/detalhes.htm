@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+	<div id="detalhes" data-role="content">
+		<h3 align="center">484 - GABRIEL MONTEIRO DA SILVA, OP. 1388</h3>
+		<h4 align="center">Vistoria: 0023 (Laranja 206)</h4>
+		<div data-role="fieldcontain">
+            <fieldset data-role="controlgroup" data-type="vertical">
+                <legend>Calçada:</legend>
+                <input id="checkbox1" name="" data-theme="c" type="checkbox">
+                <label for="checkbox1">PI</label>
+                <input id="checkbox2" name="" data-theme="c" type="checkbox">
+                <label for="checkbox2">RI</label>
+                <input id="checkbox3" name="" data-theme="c" type="checkbox">
+                <label for="checkbox3">FE</label>
+            </fieldset>
+		</div>
+		<div data-role="fieldcontain">
+            <fieldset data-role="controlgroup" data-type="vertical">
+                <legend>Cobertura:</legend>
+                <input id="checkbox1" name="" data-theme="c" type="checkbox">
+                <label for="checkbox1">PI</label>
+                <input id="checkbox2" name="" data-theme="c" type="checkbox">
+                <label for="checkbox2">RI</label>
+                <input id="checkbox3" name="" data-theme="c" type="checkbox">
+                <label for="checkbox3">FE</label>
+                <input id="checkbox4" name="" data-theme="c" type="checkbox">
+                <label for="checkbox4">MA</label>
+                <input id="checkbox5" name="" data-theme="c" type="checkbox">
+                <label for="checkbox5">SU</label>
+            </fieldset>
+		</div>
+		<div data-role="fieldcontain">
+            <fieldset data-role="controlgroup" data-type="vertical">
+                <legend>Painel:</legend>
+                <input id="checkbox1" name="" data-theme="c" type="checkbox">
+                <label for="checkbox1">PI</label>
+                <input id="checkbox2" name="" data-theme="c" type="checkbox">
+                <label for="checkbox2">RI</label>
+            </fieldset>     
+		</div>  
+		<div data-role="fieldcontain">
+            <label for="textarea1">Observações:</label>
+            <textarea name="" id="textarea1" placeholder=""></textarea>
+        </div>
+		<div data-role="fieldcontain">
+			<label for="textarea1">Fotografia:</label>
+			<input id="myfile" type="file" accept="image/*;capture=camera"/>
+        </div>
+		<div data-role="fieldcontain">
+			<div id="img_content"></div>
+        </div>
+	</div>
+	<div id="detalhes_footer" data-theme="c" data-role="footer" data-position="fixed">
+		<div class="ui-grid-a" >
+			<div class="ui-block-a">
+				<a data-role="button" href="#" data-mini="true" data-icon="edit" data-iconpos="top">
+					Itens de Vistoria
+				</a>
+			</div>
+			<div class="ui-block-b">
+				<a data-role="button" onclick="abreTela('lista_enderecos')" data-icon="check" data-iconpos="top" data-mini="true">
+					Fechar Vistoria
+				</a>
+			</div>
+		</div>
+    </div>
+	<textarea style="display:none" id="base64"></textarea>
+	<script>
+		fileChooser = document.getElementById('myfile');
+		img_content = document.getElementById('img_content');
+		fileChooser.onchange = onFileChange;	
+	</script>
+</div>

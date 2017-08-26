@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<div>
+	<script language="javascript">
+		runScript = function (){
+			var q = "select * from publicidades where id_os = " + parametro;
+			$.sql.query(q,{ success:function(result){
+				result = result.item(0);
+				$('#titulo').html('Publicidade: ' + result['id_formatado']);
+				listaAbertos();
+			} } );
+		}
+		function listaAbertos(){
+			customWrap = '<li data-theme="c" busca="ok"><a onclick="abreTela(\'publicidade_detalhes\','+ parametro +',***id_ocorrencia***)" data-transition="slide" style="white-space: normal"><small>Simak: ***simak*** -  ***tipo***</small><br/>***endereco***</a></li>';
+			$('#abertos').sql('load', {callback: listaFechados, failure: listaFechados ,table: 'publicidadespontos', condition:"executada = 'false' and id_os = '" + parametro + "'", customWrap: customWrap});
+		}
+		function listaFechados(){
+			customWrap = '<li data-theme="c" busca="ok" data-icon="check"><a onclick="abreTela(\'publicidade_detalhes\','+ parametro +',***id_ocorrencia***)" data-transition="slide"><font color="#CCCCCC" style="white-space: normal"><small>Simak: ***simak*** - ***tipo***</small><br/>***endereco***</font></a></li>';
+
+			$('#fechados').sql('load', {callback: fim, failure: fim, table: 'publicidadespontos', condition:"executada = 'true' and id_os = '" + parametro + "'", customWrap: customWrap});
+		}
+		function fim(){
+			$('ul').listview('refresh');
+			//$('#conteudo').trigger('create');			
+			document.getElementById('lista').style.display = 'block';
+
+			$("#txtSearch").keyup(function() {
+				$("#txtSearch").trigger("change");
+				//exibeItens();
+			});
+		}
+		function exibeItens(){
+			$( "li" ).each(function( index ) {
+				if( $(this).attr('busca') == 'ok' ){
+					if( $(this).text().removeDiacritics().indexOf( $('#txtSearch').val().removeDiacritics() ) == -1){
+						$(this).hide();
+					}else{
+						$(this).show();
+					}
+				}
+			});
+		}
+		function gps(){
+			if(typeof(Android) != "undefined"){
+				Android.js_abreGPS();
+			}
+		}
+	</script>
+    <div id="lista" data-role="content" style="display:none">
+		<h2 name="titulo" id="titulo" align="center">&nbsp;</h2>
+		<a data-role="button" onclick="gps()" data-mini="true">Abrir Mapa</a>
+		<ul id="abertos" name="abertos" data-role="listview" data-divider-theme="b" data-inset="true">
+            <li data-role="list-divider" role="heading">Pontos de Parada</li>
+        </ul>
+		&nbsp;
+		<ul id="fechados" name="fechados"  data-role="listview" data-divider-theme="c" data-inset="true">
+            <li data-role="list-divider" role="heading">Executados</li>
+        </ul>
+    </div>
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b" >
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('publicidade',parametro)" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b" style="padding-left:5px">
+				<input name="txtSearch" id="txtSearch" onchange="exibeItens()" type="search" data-mini="true" style="height:42px">
+			</div>
+			<div class="ui-block-c">
+				<a data-role="button" onclick="abreTela('publicidade_finalizar',parametro)" data-icon="check" data-iconpos="top" data-mini="true">
+					Finalizar
+				</a>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-language" content="pt-BR">
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta http-equiv="cache-control" content="no-cache"/>
+		<meta http-equiv="expires" content="Mon, 22 Jul 2002 11:12:01 GMT"/>
+		<meta http-equiv="pragma" content="no-cache"/>
+		<title>Kalitera SisManut</title>
+		<script language="javascript" src="jquery/javascript.js"></script>
+		<script language="javascript" src="jquery/mobile.js"></script>
+		<script language="javascript" src="jquery/websql.js"></script>
+		<link rel="stylesheet" href="jquery/css.css"/>
+		<script language="javascript">
+
+			$( document ).bind( 'mobileinit', function(){
+				$.mobile.loader.prototype.options.text = "loading";
+				$.mobile.loader.prototype.options.textVisible = false;
+				$.mobile.loader.prototype.options.theme = "a";
+				$.mobile.loader.prototype.options.html = "";
+			});
+
+			$(document).ready(function() {
+
+				$.mobile.loading( 'show', {
+					text: 'Carregando',
+					textVisible: true,
+					theme: 'a',
+					html: ""
+				});
+			});
+		</script>
+	</head>
+	<body>
+	<div data-role="page" id="page1" name="page1">
+		&nbsp;
+	</div>
+	</body>
+</html>

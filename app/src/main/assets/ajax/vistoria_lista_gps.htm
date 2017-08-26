@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<div>
+	<script language="javascript">
+		runScript = function (){
+			loading();
+			// saveProximityAlertPoint( "-23.54808", "-46.64956", "DA CONSOLACAO, 1247", "3377", "vistoria_detalhes", "7", "1300" );
+			customWrap = '';
+			customWrap += '{';
+			customWrap += '"tipo":"vistoria",';
+			customWrap += '"id":"'+ parametro +'",';
+			customWrap += '"latitude":"***gmaps_latitude***",';
+			customWrap += '"longitude":"***gmaps_longitude***",';
+			customWrap += '"endereco":"***endereco***",';
+			customWrap += '"simak":"***simak***",';
+			customWrap += '"tela":"vistoria_detalhes",';
+			customWrap += '"parametro":"***id_vistoria***",';
+			customWrap += '"subparametro":"***id_ocorrencia***"';
+			customWrap += '}';
+/*
+			customWrap  = '|||';
+			customWrap += '***gmaps_latitude***,';
+			customWrap += '***gmaps_longitude***,';
+			customWrap += '***endereco***,';
+			customWrap += '***simak***,';
+			customWrap += 'vistoria_detalhes,';
+			customWrap += '***id_vistoria***,';
+			customWrap += '***id_ocorrencia***"';
+			customWrap += '|||';
+*/
+			$('#json').sql('load', {callback: fim, failure: fim ,table: 'vistoriaspontos', condition:"vistoriada = 'false' and id_vistoria = '" + parametro + "'", customWrap: customWrap});
+		}
+		function fim(){
+			var jsonStr = $('#json').html();
+			jsonStr = jsonStr.split('}{').join('},\n{');
+			jsonStr = '[\n' + jsonStr + '\n]';
+			$('#json').html(jsonStr);
+			if(typeof(Android) != 'undefined'){
+				Android.js_criarGPS(jsonStr);
+				abreTela('vistoria_lista_enderecos',parametro);
+			}else{
+				document.getElementById('oculto').style.display = 'block';
+				loading('hide');
+			}
+		}
+	</script>
+	<div  id="oculto" name="oculto" style="display:none">
+		<textarea id="json" name="json" rows="100"></textarea>
+		<input type="button" onclick="abreTela('vistoria_lista_enderecos',parametro)" value="Ver Lista"></textarea>
+	</div>
+</div>

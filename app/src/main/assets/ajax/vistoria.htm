@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<div id="vistoria" data-role="content" style="display:none">
+	<script language="javascript">
+		runScript = function (){
+			customWrap = '<option value="***id_carro***">***placa***</option>'
+			$('#id_carro').sql('load', {callback: carregaDados, failure: carregaDados, table: 'carros', customWrap: customWrap});
+		};
+		function carregaDados(){
+			var q = "select * from vistorias where id_vistoria = " + parametro;
+			$.sql.query(q,{ success:function(result){
+				result = result.item(0);
+				document.getElementById('vistoria').style.display = 'block';
+				$('#titulo').html('Vistoria: ' + result['id_formatado']);
+
+				$('#referencia').val(result['referencia']);
+				$('#periodo').html(result['periodo']);
+				$('#km_saida').val(result['km_saida']);
+
+				var ddl = document.getElementById("id_carro");
+				for (var xi = 0; xi < ddl.options.length; xi++) {
+					if (ddl.options[xi].value == result['id_carro']) {
+						ddl.selectedIndex = xi;
+					}
+				}
+
+				var equipe = result['equipe'].split(', ')
+				for ( var eq in equipe ){
+					var html = $('#equipe').html();
+					html += '<input id="checkbox'+ eq +'" name="checkbox'+ eq +'" checked selected disabled data-theme="c" type="checkbox"><label for="checkbox'+ eq +'">'+ equipe[eq] +'</label>';
+					$('#equipe').html(html);
+				}
+				$("#id_carro").selectmenu('refresh', true);
+				$("#id_carro").trigger("change");
+				$('#conteudo').trigger('create');
+			} } );
+		}
+
+		function iniciarVistoria(gps){
+			var cb = function(){
+				abreTela('vistoria_lista_enderecos',parametro);
+			};
+			if( gps == 'gps'){
+				cb = function(){
+					abreTela('vistoria_lista_gps',parametro);
+				};
+			}
+			if( $('#id_carro').val() != "" && $('#km_saida').val() != "" ){
+				$.sql.query( "update vistorias set andamento = 'false'" ,{ success:function(result){
+					var q = "";
+					q += " update vistorias set ";
+					q += " km_saida = '"+ $('#km_saida').val() +"', ";
+					q += " id_carro = '"+ $('#id_carro').val() +"', ";
+					q += " hs_saida = '"+ getDate() +"', ";
+					q += " andamento = 'true' ";
+					q += " where id_vistoria = " + parametro;
+					$.sql.query(q,{ success:function(result){ 
+						cb();
+					} });
+				} });
+			}else{
+				alert('Preencha todos os campos.')
+			}
+		}
+
+	</script>
+	<h2 name="titulo" id="titulo" align="center">&nbsp;</h2>
+	<label for="referencia">
+		Referência:
+	</label>
+	<input name="referencia" id="referencia" disabled placeholder="" value="" type="text">
+	<fieldset name="equipe" id="equipe" data-role="controlgroup" data-type="vertical">
+		<legend>
+			Encarregados:
+		</legend>
+	</fieldset>
+	<fieldset data-role="controlgroup" data-type="vertical">
+		<legend>
+			Período:
+		</legend>
+		<input id="checkbox4" checked selected disabled type="checkbox">
+		<label for="checkbox4"><span name="periodo" id="periodo">&nbsp;</span></label>
+	</fieldset>
+	<label for="id_carro">
+		Placa do Carro:
+	</label>
+	<select name="id_carro" id="id_carro" placeholder="">
+		<option value="">Escolher</option>
+	</select>
+	<label for="km_saida">
+		Quilometragem Inicial:
+	</label>
+	<input name="km_saida" id="km_saida" placeholder="" value="" type="tel">  
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b" >
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('tarefas')" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b">
+				<a data-role="button" onclick="iniciarVistoria('gps')" data-icon="check" data-iconpos="top" data-mini="true">
+					Iniciar
+				</a>
+			</div>
+			<div class="ui-block-c" style="padding-right:5px">
+				<a data-role="button" onclick="iniciarVistoria()" data-icon="forward" data-iconpos="top" data-mini="true">
+					Ver Pontos
+				</a>
+			</div>
+		</div>
+	</div>
+</div>

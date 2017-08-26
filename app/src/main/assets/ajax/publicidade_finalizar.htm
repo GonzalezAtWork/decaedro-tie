@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<div id="publicidade" data-role="content" style="display:none">
+	<script language="javascript">
+		runScript = function (){
+			var q = "select * from publicidades where id_os = " + parametro;
+			$.sql.query(q,{ success:function(result){
+				result = result.item(0);
+				document.getElementById('publicidade').style.display = 'block';
+				$('#titulo').html('Publicidade: ' + result['id_formatado']);
+				$('#referencia').val(result['referencia']);
+				$('#km_chegada').val(result['km_chegada']);	
+				var equipe = result['equipe'].split(', ')
+				for ( var eq in equipe ){
+					var html = $('#equipe').html();
+					html += '<input id="checkbox'+ eq +'" name="checkbox'+ eq +'" checked selected disabled data-theme="c" type="checkbox"><label for="checkbox'+ eq +'">'+ equipe[eq] +'</label>';
+					$('#equipe').html(html);
+				}
+				$('#conteudo').trigger('create');
+			} } );
+		}
+
+		function finalizarPublicidade(){
+			if( $('#km_chegada').val() != "" ){
+				var q = "";
+				q += " update publicidades set ";
+				q += " km_chegada = '"+ $('#km_chegada').val() +"', ";
+				q += " hs_chegada = '"+ getDate() +"', ";
+				q += " andamento = 'false', ";
+				q += " executada = 'true' ";
+				q += " where id_os = " + parametro;
+				$.sql.query(q,{ success:function(result){ 
+					//abreTela('tarefas')
+					abreTela('sincronizar')
+				} });
+			}else{
+				alert('Preencha todos os campos.')
+			}
+		}
+	</script>
+	<h2 name="titulo" id="titulo" align="center">&nbsp;</h2>
+	<label for="textinput1">
+		Referência:
+	</label>
+	<input name="referencia" id="referencia" disabled placeholder="" value="" type="text">
+	<fieldset name="equipe" id="equipe" data-role="controlgroup" data-type="vertical">
+		<legend>
+			Encarregados:
+		</legend>
+	</fieldset>
+	<label for="textinput2">
+		Quilometragem Final:
+	</label>
+	<input name="km_chegada" id="km_chegada" placeholder="" value="" type="tel"> 
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b" >
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('publicidade_lista_enderecos',parametro)" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b" style="padding-right:5px">&nbsp;</div>
+			<div class="ui-block-c">
+				<a data-role="button" onclick="finalizarPublicidade()" data-icon="check" data-iconpos="top" data-mini="true">
+					Finalizar
+				</a>
+			</div>
+		</div>
+	</div>
+</div>

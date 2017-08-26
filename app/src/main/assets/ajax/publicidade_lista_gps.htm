@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<div>
+	<script language="javascript">
+		runScript = function (){
+			loading();
+			// saveProximityAlertPoint( "-23.54808", "-46.64956", "DA CONSOLACAO, 1247", "3377", "publicidade_detalhes", "7", "1300" );
+			customWrap = '';
+			customWrap += '{';
+			customWrap += '"tipo":"publicidade",';
+			customWrap += '"id":"'+ parametro +'",';
+			customWrap += '"latitude":"***gmaps_latitude***",';
+			customWrap += '"longitude":"***gmaps_longitude***",';
+			customWrap += '"endereco":"***endereco***",';
+			customWrap += '"simak":"***simak***",';
+			customWrap += '"tela":"publicidade_detalhes",';
+			customWrap += '"parametro":"***id_os***",';
+			customWrap += '"subparametro":"***id_ocorrencia***"';
+			customWrap += '}';
+			$('#json').sql('load', {callback: fim, failure: fim ,table: 'publicidadespontos', condition:"executada = 'false' and id_os = '" + parametro + "'", customWrap: customWrap});
+		}
+		function fim(){
+			var jsonStr = $('#json').html();
+			jsonStr = jsonStr.split('}{').join('},\n{');
+			jsonStr = '[\n' + jsonStr + '\n]';
+			$('#json').html(jsonStr);
+			if(typeof(Android) != 'undefined'){
+				Android.js_criarGPS(jsonStr);
+				abreTela('publicidade_lista_enderecos',parametro);
+			}else{
+				document.getElementById('oculto').style.display = 'block';
+				loading('hide');
+			}
+		}
+	</script>
+	<div  id="oculto" name="oculto" style="display:none">
+		<textarea id="json" name="json" rows="100"></textarea>
+		<input type="button" onclick="abreTela('publicidade_lista_enderecos',parametro)" value="Ver Lista"></textarea>
+	</div>
+</div>

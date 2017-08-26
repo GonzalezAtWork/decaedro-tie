@@ -18,8 +18,10 @@ import net.decaedro.DKActivity;
 
 public class MainActivity extends DKActivity {
 
-	public String php_endereco = "http://ocorrencias.decaedro.net";
+	//public String php_endereco = "http://ocorrencias.decaedro.net";
+	public String php_endereco = "http://tie4.decaedro.net/online";
 	public String userAgent = "Decaedro Ocorrencias";
+	public MainActivity activity;
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -106,6 +108,7 @@ public class MainActivity extends DKActivity {
 	@Override
 	public void start(){
 		super.start();
+		activity = this;
 		setContentView(R.layout.main);
 		myWebView = DKWebView.create( (Activity) this, this, (WebView) findViewById(R.id.webView1), userAgent, true );
         myWebView.addJavascriptInterface(new JavaScriptInterface(this), "Android");
@@ -114,19 +117,47 @@ public class MainActivity extends DKActivity {
 	public class JavaScriptInterface {
 		Context mContext;
 		JavaScriptInterface(Context c) { mContext = c; }
-		public void loading_show() { dialog.show(); }
-		public void loading_hide() { dialog.dismiss(); }
+		@JavascriptInterface
+		public void loading_show() {
+			activity.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					dialog.show();
+				}
+			});
+		}
+		@JavascriptInterface
+		public void loading_hide() {
+			activity.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					dialog.dismiss();
+				}
+			});
+		}
+		@JavascriptInterface
 		public void closeMyActivity() { finish(); }
+		@JavascriptInterface
 		public void js_showMsg(String msg){ showMsg(msg); }
+		@JavascriptInterface
 		public void openMenu() { openOptionsMenu(); }
+		@JavascriptInterface
 		public String js_NOMEUSUARIO(){ return NOME_USUARIO; }
+		@JavascriptInterface
 		public String js_TOKEN(){ return TOKEN; }
+		@JavascriptInterface
 		public String js_URLWEBSERVICE(){ return URL_WEBSERVICE; }
+		@JavascriptInterface
 		public String getWebService(){ return URL_WEBSERVICE; }
+		@JavascriptInterface
 		public String getIMEI(){ return findDeviceID(); }
+		@JavascriptInterface
 		public String getPackage(){ return strPackage; }
+		@JavascriptInterface
 		public String getVersionName(){ return strVersionName; }
+		@JavascriptInterface
 		public String js_getBase64(String path){ return getBase64(path); }
+		@JavascriptInterface
 		public void js_tiraFoto(String filename, String callback, String _newExif){  
 			newExif = _newExif;
 			Intent cameraIntent = new Intent("android.media.action.IMAGE_CAPTURE");
@@ -152,6 +183,7 @@ public class MainActivity extends DKActivity {
 			picUri = Uri.fromFile(photo);
 			MainActivity.this.startActivityForResult(cameraIntent, MainActivity.TAKE_B64_PICTURE);    
 		}
+		@JavascriptInterface
 		public void js_OpenOptions(String _title, String _options, String _values, String _checkeds, String _callback ){
 			loading_hide();
 			final String retCallback = _callback;

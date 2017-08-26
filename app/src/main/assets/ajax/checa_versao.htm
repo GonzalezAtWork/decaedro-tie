@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+<script language="javascript">
+runScript = function (){
+	// se tiver conexao, checaVersao, do contrario checa o login;
+	checkConnection(checaVersao, off);
+}
+
+function off(){
+	abreTela("tarefas");
+};
+
+function checaVersao(){
+	var strPackage = Android.getPackage();
+	var strVersionName = Android.getVersionName();
+	$.ajax({
+		type: "POST",
+		url: URL_WEBSERVICE + "../mobile/version.php",
+		data: {
+			strPackage: strPackage,
+			strVersionName: strVersionName
+		},
+		success: function(json){
+			json = eval( "("+ json +")");
+			Android.js_checaVersao( json.package, json.apk, json.versionName );
+		}
+	});
+}
+</script>
+</div>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+<script language="javascript">
+runScript = function (){
+	firstrun = false;
+	chk_tabelas_counter = 0;
+	// se tiver conexao, sincroniza, do contrario checa o login;
+	checkConnection(checaTabelas, chkLogado);
+}
+var chk_tabelas_counter = 0;
+var notSync = [
+	'carros',
+	'usuarios',
+	'vistoriasitens',
+	'itenstipo',
+	'publicidadeimagens'
+];
+var syncWraps = {
+	fotografias: 'insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp) values(\'***base64***\',\'***data***\',\'***id_item***\',\'***id_vistoria***\',\'***id_os***\',\'***id_ocorrencia***\',\'***id_ponto***\',\'***nome***\',\'***stamp***\');',
+	manutencoes: 'update oss set id_carro = \'***id_carro***\', hs_rodados = \'***hs_rodados***\', hs_chegada = \'***hs_chegada***\', hs_saida = \'***hs_saida***\', km_rodados = \'***km_rodados***\', km_chegada = \'***km_chegada***\', km_saida = \'***km_saida***\', executada = \'***executada***\', andamento = \'***andamento***\' where id_os = ***id_os***;', 
+	manutencoespontos: 'update ocorrencias set dt_lastupdate = \'***dt_lastupdate***\', observacaomanutencao = \'***observacaomanutencao***\', fotomanutencao = \'***fotomanutencao***\', itensmanutencao = \'***itensmanutencao***\', executada = \'***executada***\' where id_ocorrencia = ***id_ocorrencia***;',
+	vistorias: 'update vistorias set id_carro = \'***id_carro***\', hs_rodados = \'***hs_rodados***\', hs_chegada = \'***hs_chegada***\', hs_saida = \'***hs_saida***\', km_rodados = \'***km_rodados***\', km_chegada = \'***km_chegada***\', km_saida = \'***km_saida***\', executada = \'***executada***\', andamento = \'***andamento***\' where id_vistoria = ***id_vistoria***;', 
+	vistoriaspontos: 'update ocorrencias set dt_lastupdate = \'***dt_lastupdate***\', gerar_os = \'***gerar_os***\', observacaovistoria = \'***observacaovistoria***\', fotovistoria = \'***fotovistoria***\', itensvistoria = \'***itensvistoria***\', vistoriada = \'***vistoriada***\' where id_ocorrencia = ***id_ocorrencia***;',
+	publicidades: 'update oss set hs_rodados = \'***hs_rodados***\', hs_chegada = \'***hs_chegada***\', hs_saida = \'***hs_saida***\', km_rodados = \'***km_rodados***\', km_chegada = \'***km_chegada***\', km_saida = \'***km_saida***\', executada = \'***executada***\', andamento = \'***andamento***\' where id_os = ***id_os***;', 
+	publicidadespontos: 'update ocorrencias set dt_lastupdate = \'***dt_lastupdate***\', observacaomanutencao = \'***observacaomanutencao***\', fotomanutencao = \'***fotomanutencao***\', itensmanutencao = \'***itensmanutencao***\', executada = \'***executada***\' where id_ocorrencia = ***id_ocorrencia***;'
+};
+var contaRegistro = 0;
+function processaTabela(tabela){
+	$('#query').html("");
+	var customWrap = syncWraps[tabela];
+	var q = "";
+	q += " select * from " + tabela;
+	if(tabela == 'fotografias'){
+		q+= " where uploaded != 'true' ";
+	}
+	q += " LIMIT 1 OFFSET " + contaRegistro;
+	$.sql.query(q,{ failure:checaTabelas, success:function(rows){
+		contaRegistro++;
+		if( typeof(rows.length) != 'undefined' && rows.length > 0 ){
+			for (var i = 0; i < rows.length; i++) {		
+				ret = customWrap;
+				for (var j in rows.item(i)) {
+					var base = "***"+ j +"***";
+					var novo = rows.item(i)[j];							
+					ret = ret.split(base).join(novo);
+				}
+				ret = ret.split("'null'").join('null');
+				$('#query').html(ret);
+			}
+			envia( ret, function(){ processaTabela(tabela) } );
+			if(tabela == 'fotografias'){
+				andamento_fotos++
+				loading( (andamento_fotos * 60 / totalRegistro ) + (chk_tabelas_counter * 40 / tabelas.length) );
+			}
+		}else{
+			checaTabelas()
+		}
+	} } );
+}
+var totalRegistro = 0;
+function contaTabela(tabela){
+	var q = " select count(1) as total from " + tabela;
+	$.sql.query(q,{ failure:checaTabelas, success:function(rows){
+		if( typeof(rows.length) != 'undefined' && rows.length > 0 ){
+			totalRegistro = rows.item(0)["total"];
+			processaTabela(tabela);
+		}else{
+			checaTabelas()
+		}
+	} } );
+}
+var andamento_fotos = 0;
+function checaTabelas(){
+	loading(1);
+	var tbl = tabelas[chk_tabelas_counter];
+	if(andamento_fotos != 0){
+		andamento_fotos = 60;
+	}
+	loading( andamento_fotos + (chk_tabelas_counter * 40 / tabelas.length) );
+	if(tabelas.length != chk_tabelas_counter){
+		chk_tabelas_counter++
+		if( notSync.indexOf(tbl) == -1 ){
+			contaRegistro = 0;
+			totalRegistro = 0;
+			contaTabela(tbl);
+		}else{
+			checaTabelas();
+		}
+	}else{
+		loading(90);
+		Logout(recebe);
+	}
+}
+
+function envia(q, callback){
+	checagem = "select 'OK' as processado";
+	resposta = '{"processado":"OK"}';
+	q = q.split(" dt_lastupdate = '' ").join(" dt_lastupdate = null ");
+	q += checagem;
+	$.ajax({
+		type: "POST",
+		url: URL_WEBSERVICE + "exec_query.php",
+		data: {
+			query: q
+		},
+		success: function(json){
+			if(json == resposta){
+				callback() //Logout(recebe);
+			}else{
+				alert('Erro na sql: ' + json);
+			}
+		}
+	});
+}
+function recebe(){
+	var imei = "";
+	if(typeof(Android) != "undefined"){
+		imei = Android.getIMEI();
+	}
+	$.ajax({
+		type: "POST",
+		url: URL_WEBSERVICE + "sincronizar.php",
+		data: {
+			token:					$('#token').val(),
+			device: imei
+		},
+		success: function(json){
+			// erro com uso de memoria pra eval?
+			//var arr = eval(json);
+
+			var resposta = json;
+			resposta = resposta.split('["').join('');
+			resposta = resposta.split('"]').join('');
+			var arr = resposta.split('","');
+			total_sync = arr.length;
+			$.sql.query( arr ,{ failure:falha, success:sucesso } );
+		}
+	});
+}
+
+function sucesso(result){
+	exec_sync++;
+	continua();
+}
+function falha(result){
+	exec_sync++;
+	// TODO: analisar duplicidade de UNIQUES nos inserts
+	if(result != "constraint failed"){
+		alert('Sincronia:' + result)
+	}
+	continua();
+}
+var total_sync = 0;
+var exec_sync = 0;
+function continua(){
+	if(total_sync == exec_sync){
+		total_sync = 0;
+		exec_sync = 0;
+		var q = "UPDATE usuarios set logado_mobile = 'true'"; // where id_usuario = " +  $("#id_usuario").val();
+		$.sql.query(q,{ success:function(result){
+			loading(100);
+			// Tudo perfeito, logar e vai pra lista de tarefas
+			chkLogado();
+		} } );
+	}
+}
+</script>
+<textarea id="query" name="query" style="display:none"></textarea>
+</div>

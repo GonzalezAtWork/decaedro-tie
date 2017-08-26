@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+	<script language="javascript">
+		var itensVistoria = "";
+		var itensManutencao = "";
+		var itensImagens;
+		runScript = function (){
+			var q = " ";
+			q += " select * from publicidadespontos ";
+			q += " inner join publicidades on publicidades.id_os = publicidadespontos.id_os ";
+			q += " where publicidadespontos.id_os = " + parametro + " and publicidadespontos.id_ocorrencia = " + subparametro;
+			$.sql.query(q,{ success:function(result){
+				result = result.item(0);
+				$('#otima').val(result['otima']);
+				$('#simak').val(result['simak']);
+				$('#id_ponto').val(result['id_ponto']);
+				$('#txt_titulo').html(result['endereco']);
+				$('#txt_detalhes').html('Publicidade: ' + result['id_formatado'] + ' ( ' + result['roteiro'] + ' )<br/>Simak: '+ result['simak'] + ' - '+ result['tipo']);
+				itensVistoria = result['itensvistoria'];
+				itensManutencao = result['itensmanutencao'];
+				$('#observacaomanutencao').val( result['observacaomanutencao'] );
+				montaItensImagens(result['nomeimagenspublicidade']);
+				buscaFotos();
+			} } );
+		}
+		function montaItensImagens( _itensImagens ){
+			var base = _itensImagens.split('|');
+			for (var a = 0; a < base.length; a++ ){
+				var nova = base[a].split(';');
+				var id_item = nova[0].split(',');
+				var antiga = id_item[1];
+				id_item = id_item[0];
+				nova = nova[1];
+				base[a] = [id_item, antiga, nova];
+			}
+			itensImagens = base;
+		}
+		function buscaFotos(){
+			var q = " ";
+			q += " select * from fotografias ";
+			q += " where id_os = " + parametro + " and id_ocorrencia = " + subparametro;
+			$.sql.query(q,{ failure: montaTipos, success:function(rows){
+				for (var i = 0; i < rows.length; i++) {						
+					var img = new Image();
+					img.setAttribute("stamp", rows.item(i)["stamp"] );
+					//img.setAttribute("foto","ok");
+					img.setAttribute("uploaded", rows.item(i)["uploaded"]);
+					img.setAttribute("id_ponto", rows.item(i)["id_ponto"]);
+					img.setAttribute("id_ocorrencia", rows.item(i)["id_ocorrencia"]);
+					img.setAttribute("id_os", rows.item(i)["id_os"]);
+					img.setAttribute("id_vistoria", rows.item(i)["id_vistoria"]);
+					img.setAttribute("id_item", rows.item(i)["id_item"]);
+					img.setAttribute("nome", rows.item(i)["nome"]);
+					img.setAttribute("data", rows.item(i)["data"]);
+					img.src = "data:image/jpeg;base64," + rows.item(i)["base64"];
+					img.width = 300;
+					document.getElementById('img_content').appendChild(img);
+				}
+				montaTipos()
+			} } );
+		}
+		function montaTipos(){
+			var q = "select * from itenstipo ";
+			$.sql.query(q,{ success:function(result){
+				var html = "";
+				totalTipos = result.length;
+				for(var i = 0; i < result.length; i++){
+					item = result.item(i);
+					if(item['id_tipoitem'] != 0){
+						html = $('#itens').html();
+						html += '<div data-role="fieldcontain" id="titulo_tipo'+ item['id_tipoitem'] +'" name="titulo_tipo'+ item['id_tipoitem'] +'">';
+						html += '<fieldset data-role="controlgroup" data-type="vertical"><legend>'+ item['nome'] +':</legend>';
+						html += '<div id="tipo'+ item['id_tipoitem'] +'" name="tipo'+ item['id_tipoitem'] +'"></div>';
+						html += '</fieldset>';
+						html += '</div>';
+						$('#itens').html(html);
+						
+						var cw = '';
+						cw += '<input name="iv_***id_item***" id="iv_***id_item***" obrigafoto="***foto***" onclick="chkFoto(\'***id_item***\')"  data-theme="c" type="checkbox">';
+						cw += '<label for="iv_***id_item***">';
+						cw += '<div id="titulo_***id_item***">TROCA DE CARTAZ</div>';
+						cw += '***nome***';
+						cw += '<hr/>';
+						cw += '<table align="center">';
+						cw += '<tr id="barra_***id_item***">';
+						cw += '<td align="center"><small>ANTIGA</small></td>';
+						cw += '<td>&nbsp;</td>';
+						cw += '<td align="center"><small>NOVA</small></td>';
+						cw += '</tr>';
+						cw += '<tr>';
+						cw += '<td id="antiga_***id_item***" align="center"></td>';
+						cw += '<td>&nbsp;</td>';
+						cw += '<td id="nova_***id_item***" align="center"></td>';
+						cw += '</tr>';
+						cw += '</table>';
+						cw += '</label>';
+
+						$('#tipo'+ item['id_tipoitem']).sql('load', {callback: montouItens, failure: montouItens, table: 'vistoriasitens', condition:"id_item in ("+ itensVistoria +") and id_tipoitem = '" + item['id_tipoitem'] +"'" , customWrap:cw });
+					}
+				}
+				html = $('#itens').html();
+				//html += '<div data-role="fieldcontain" style="display:none">';
+				html += '<div data-role="fieldcontain" id="titulo_tipo'+ totalTipos +'" name="titulo_tipo'+ totalTipos +'">';
+				html += '<fieldset data-role="controlgroup" data-type="vertical"><legend>Outros:</legend>';
+				html += '<div id="tipo' + totalTipos + '" name="tipo' + totalTipos + '"></div>';
+				html += '</fieldset>';
+				html += '</div>';
+				$('#itens').html(html);
+			} } )
+		}
+		var totalTipos = 0;
+		var counter = 0;
+		function montouItens(retorno){
+			counter++
+			if(retorno.html() != ""){
+				$('#tipo'+ counter).html( retorno.html() )
+			}else{
+				$('#titulo_tipo'+ counter).hide();
+			}
+			if(counter == totalTipos - 1){
+				var cw = '';
+				cw += '<input name="iv_***id_item***" id="iv_***id_item***" data-theme="c" type="checkbox">';
+				cw += '<label for="iv_***id_item***">';
+				cw += '<div id="titulo_***id_item***">&nbsp;</div>';
+				cw += '***nome***';
+				cw += '<hr/>';
+				cw += '<table align="center">';
+				cw += '<tr id="barra_***id_item***">';
+				cw += '<td align="center"><small>ANTIGA</small></td>';
+				cw += '<td>&nbsp;</td>';
+				cw += '<td align="center"><small>NOVA</small></td>';
+				cw += '</tr>';
+				cw += '<tr>';
+				cw += '<td id="antiga_***id_item***" align="center"></td>';
+				cw += '<td>&nbsp;</td>';
+				cw += '<td id="nova_***id_item***" align="center"></td>';
+				cw += '</tr>';
+				cw += '</table>';
+				cw += '</label>';
+
+				$('#tipo'+ totalTipos).sql('load', {
+					callback: montouItens,
+					failure: montouItens,
+					table: 'vistoriasitens', 
+					condition:" id_tipoitem = '0' and id_item in ("+ itensVistoria +")" , 
+					customWrap:cw 
+				});
+			}
+			if(counter == totalTipos){
+				finalizou();
+			}
+		}
+		function montaImagens(){
+			var q = " select * from publicidadeimagens ";
+			//q += " where nome = '" + subparametro + "'";
+			$.sql.query(q,{ success:function(rows){
+				for (var i = 0; i < rows.length; i++) {	
+					for (var a = 0; a < itensImagens.length; a++ ){
+						if( itensImagens[a][1] == rows.item(i)["nome"] ){						
+							var img = new Image();
+							img.src = "data:image/jpeg;base64," + rows.item(i)["imagem"];
+							img.width = 100;
+							img.setAttribute('nome',rows.item(i)["nome"]);
+							img.id = "imagem_antiga_" + itensImagens[a][0];
+							img.name = "imagem_antiga_" + itensImagens[a][0];
+							document.getElementById('antiga_'+ itensImagens[a][0]).appendChild(img);
+						}
+						if( itensImagens[a][2] == rows.item(i)["nome"] ){						
+							var img = new Image();
+							img.src = "data:image/jpeg;base64," + rows.item(i)["imagem"];
+							img.width = 100;
+							img.setAttribute('nome',rows.item(i)["nome"]);
+							img.id = "imagem_nova_" + itensImagens[a][0];
+							img.name = "imagem_nova_" + itensImagens[a][0];
+							document.getElementById('nova_'+ itensImagens[a][0]).appendChild(img);
+						}
+					}
+				}			
+				alteraCheckIns();
+			} } );
+		}
+		function alteraCheckIns(){
+			for (var a = 0; a < itensImagens.length; a++ ){
+				var chkAntiga =	document.getElementById('imagem_antiga_'+ itensImagens[a][0]);
+				var chkNova = document.getElementById('imagem_nova_'+ itensImagens[a][0]);
+				if(chkAntiga != null && chkNova != null && chkAntiga.getAttribute('nome') != chkNova.getAttribute('nome')){
+					$('#titulo_'+ itensImagens[a][0]).html('TROCA DE CARTAZ');
+				}else{
+					document.getElementById('barra_'+ itensImagens[a][0]).style.display = 'none';				
+					document.getElementById('imagem_antiga_'+ itensImagens[a][0]).style.display = 'none';
+					$('#titulo_'+ itensImagens[a][0]).html('CHECK-IN FOTOGRÁFICO');				
+				}
+			}
+		}
+		function finalizou(){			
+			var itensChecked = itensManutencao.split(', ');
+			for( var ble in itensChecked){
+				$('#iv_' + itensChecked[ ble ] ).attr('checked','checked');
+			}
+			$('#conteudo').trigger('create');
+			montaImagens();
+			document.getElementById('detalhes').style.display = 'block';	
+		}
+		var arr_iv = [];
+		function salvar(){
+			loading();
+			arr_iv = [];
+			$("input:checkbox:checked").each(function(){
+				arr_iv.push( $(this).attr('name').split('iv_').join('') );
+			});
+			var dados = {
+				id_ocorrencia:			subparametro,
+				id_os:					parametro,
+				observacaomanutencao:	$('#observacaomanutencao').val(),
+				//fotomanutencao:			$('#img_content').html().split('<img src="data:image/jpeg;base64,').join('').split('" width="400">').join(''),
+				itensManutencao:		arr_iv.join(', ')
+			};
+			var querys = [];
+			var q = "";
+			q += "update publicidadespontos set ";
+			q += "	observacaomanutencao = '"+ dados.observacaomanutencao +"', ";
+			//q += "	fotomanutencao = '"+ dados.fotomanutencao +"', ";
+			q += "	itensManutencao = '"+ dados.itensManutencao +"', ";
+			q += "	dt_lastupdate = '"+ getDate() +"', ";
+			q += "	executada = 'true' ";
+			q += " where id_ocorrencia = " + dados.id_ocorrencia;
+			querys.push(q);
+			$( "img" ).each(function( index ) {
+				if( $(this).attr('foto') == 'ok' ){
+					var nq = "";
+					nq += " insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp, uploaded) values( ";
+					nq += " '"+ $(this).attr('src').split('data:image/jpeg;base64,').join('') +"', ";
+					nq += " '"+ $(this).attr('data') +"', ";
+					nq += " '"+ $(this).attr('id_item') +"', ";
+					nq += " '"+ $(this).attr('id_vistoria') +"', ";
+					nq += " '"+ $(this).attr('id_os') +"', "; 
+					nq += " '"+ $(this).attr('id_ocorrencia') +"', ";
+					nq += " '"+ $(this).attr('id_ponto') +"', ";
+					nq += " '"+ $(this).attr('nome') +"', ";
+					nq += " '"+ $(this).attr('stamp') +"', ";
+					nq += " '"+ $(this).attr('uploaded') +"' ";
+					nq += " ) ";
+					querys.push(nq);
+				}
+			});
+			var contador = 0
+			$.sql.query(querys,{ success:function(result){
+				contador++
+				if(querys.length == contador){
+					checkConnection(updateOnline,continua);
+				}
+			} } );	
+		}
+		function abreItens(){
+			alert('Em Construção');
+		}
+
+		function updateOnline(){
+			loading();
+			var dados = {
+				id_ocorrencia:			subparametro,
+				id_os:					parametro,
+				observacaomanutencao:	$('#observacaomanutencao').val(),
+				//fotomanutencao:			$('#img_content').html().split('<img src="data:image/jpeg;base64,').join('').split('" width="400">').join(''),
+				itensManutencao:		arr_iv.join(', ')
+			};
+			var q = "";
+			q += " update ocorrencias set ";
+			q += "	observacaomanutencao = '"+ dados.observacaomanutencao +"', ";
+			//q += "	fotomanutencao = '"+ dados.fotomanutencao +"', ";
+			q += "	itensManutencao = '"+ dados.itensManutencao +"', ";
+			q += "	dt_lastupdate = '"+ getDate() +"', ";
+			q += "	executada = 'true' ";
+			q += " where id_ocorrencia = " + dados.id_ocorrencia + ";";
+
+			$( "img" ).each(function( index ) {
+				if( $(this).attr('foto') == 'ok' && $(this).attr('uploaded') != "ok" ){
+					var nq = "";
+					nq += " insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp) values( ";
+					nq += " '"+ $(this).attr('src').split('data:image/jpeg;base64,').join('') +"', ";
+					nq += " '"+ $(this).attr('data') +"', ";
+					nq += " '"+ $(this).attr('id_item') +"', ";
+					nq += " '"+ $(this).attr('id_vistoria') +"', ";
+					nq += " '"+ $(this).attr('id_os') +"', ";
+					nq += " '"+ $(this).attr('id_ocorrencia') +"', ";
+					nq += " '"+ $(this).attr('id_ponto') +"', ";
+					nq += " '"+ $(this).attr('nome') +"', ";
+					nq += " '"+ $(this).attr('stamp') +"' ";
+					nq += " ); ";
+
+					q += nq;
+				}
+			});
+			$.ajax({
+				type: "POST",
+				url: URL_WEBSERVICE + "exec_query.php?rand=" +(new Date().getTime()),
+				data: {
+					query:   q
+				},
+				success: function(json){
+					//alert('Retorno: ' + json);		
+					apagaFotos();
+				},
+				error: function(xmlHttpRequest, textStatus, errorThrow){
+					// Erro 324:net::ERR_EMPTY_RESPONSE					
+					if(xmlHttpRequest.readyState == 0 || xmlHttpRequest.status == 0) {
+						alert(textStatus + ': '+ errorThrow);
+					}
+					continua();
+				}
+			});
+		}
+		function apagaFotos(){
+			$.sql.query( "update fotografias set uploaded = 'true' where id_ocorrencia = '" + subparametro + "'" ,{ 
+				success:function(result){
+					continua();
+				} 
+			});
+		}
+
+		function continua(){
+			abreTela('publicidade_lista_enderecos', parametro);
+		}
+		
+		function chkFoto(id_item){
+			if( typeof(id_item) != "undefined" ){
+				var obj = document.getElementById('iv_' + id_item);
+				if( obj.checked && obj.getAttribute("obrigafoto") == "true" ){
+					//tiraFoto(nome, id_ponto, id_ocorrencia, id_os, id_vistoria, id_item, otima, simak){
+					var nome = subparametro +"_"+ id_item;
+					tiraFoto( nome, $('#id_ponto').val(), subparametro, parametro,'0',id_item, $('#otima').val(), $('#simak').val() );
+				}
+			}		
+		}
+		function man_tiraFoto(){
+			//tiraFoto(nome, id_ponto, id_ocorrencia, id_os, id_vistoria, id_item, otima, simak){
+			var id_item = "0";
+			var nome = subparametro +"_"+ id_item;
+			tiraFoto( nome, $('#id_ponto').val(), subparametro, parametro, '0', id_item, $('#otima').val(), $('#simak').val() );
+		}
+	</script>
+	<input type="hidden" name="otima" id="otima" value=""/>
+	<input type="hidden" name="simak" id="simak" value=""/>
+	<div id="detalhes" data-role="content" style="display:none">
+		<h4 align="center" name="txt_detalhes" id="txt_detalhes">&nbsp;</h4>
+		<h3 align="center" name="txt_titulo" id="txt_titulo">&nbsp;</h3>
+		<div id="itens" name="itens"></div>
+		<div data-role="fieldcontain">
+            <label for="observacaomanutencao">Observações:</label>
+            <textarea name="observacaomanutencao" id="observacaomanutencao" placeholder="" style="height:80px"></textarea>
+        </div>
+		<div data-role="fieldcontain">
+			<div id="img_content" name="img_content" align="center"></div>
+        </div>
+	</div>
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b" >
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('publicidade_lista_enderecos',parametro)" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b">
+				<a data-role="button" onclick="man_tiraFoto()" data-mini="true" data-icon="star" data-iconpos="top">
+					Fotografia
+				</a>
+			</div>
+			<div class="ui-block-c">
+				<a data-role="button" onclick="salvar()" data-icon="check" data-iconpos="top" data-mini="true">
+					Concluir
+				</a>
+			</div>
+		</div>
+    </div>
+</div>

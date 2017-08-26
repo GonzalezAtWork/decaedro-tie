@@ -23,7 +23,7 @@ public class DKActivity extends Activity
 {
 	protected WebView myWebView;
 	protected String LOG_TAG = "MainActivity";
-	private String userAgent = "Decaedro";
+	private String userAgent = "10edroTie";
 
 	protected boolean dialogCreated = false;
 	

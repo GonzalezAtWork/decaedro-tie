@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html> 
+<div>
+	<script language="javascript">
+		var itensVistoria = "";
+
+
+		runScript = function (){
+			var q = " ";
+			q += " select * from vistoriaspontos ";
+			q += " inner join vistorias on vistorias.id_vistoria = vistoriaspontos.id_vistoria ";
+			q += " where vistoriaspontos.id_vistoria = " + parametro + " and vistoriaspontos.id_ocorrencia = " + subparametro;
+			$.sql.query(q,{ success:function(result){
+				result = result.item(0);
+				$('#otima').val(result['otima']);
+				$('#simak').val(result['simak']);
+				$('#id_ponto').val(result['id_ponto']);
+				$('#txt_titulo').html(result['endereco']);
+				$('#txt_detalhes').html('Vistoria: ' + result['id_formatado'] + ' ( ' + result['roteiro'] + ' )<br/>Simak: '+ result['simak'] + ' - ' + result['tipo']);
+				itensVistoria = result['itensvistoria'];
+
+				$('#observacaovistoria').val( result['observacaovistoria'] );
+
+				buscaFotos();
+			} } );
+		}
+		function buscaFotos(){
+			var q = " ";
+			q += " select * from fotografias ";
+			q += " where id_vistoria = " + parametro + " and id_ocorrencia = " + subparametro;
+			$.sql.query(q,{ failure: montaTipos, success:function(rows){
+				for (var i = 0; i < rows.length; i++) {						
+					var img = new Image();
+					img.setAttribute("stamp", rows.item(i)["stamp"] );
+					//img.setAttribute("foto","ok");
+					img.setAttribute("uploaded", rows.item(i)["uploaded"]);
+					img.setAttribute("id_ponto", rows.item(i)["id_ponto"]);
+					img.setAttribute("id_ocorrencia", rows.item(i)["id_ocorrencia"]);
+					img.setAttribute("id_os", rows.item(i)["id_os"]);
+					img.setAttribute("id_vistoria", rows.item(i)["id_vistoria"]);
+					img.setAttribute("id_item", rows.item(i)["id_item"]);
+					img.setAttribute("nome", rows.item(i)["nome"]);
+					img.setAttribute("data", rows.item(i)["data"]);
+					img.src = "data:image/jpeg;base64," + rows.item(i)["base64"];
+					img.width = 300;
+					document.getElementById('img_content').appendChild(img);
+				}
+				montaTipos()
+			} } );
+		}
+		function abreItens(id_tipoitem, tipo){
+			loading();
+			var q = " select * from vistoriasitens where id_tipoitem = " + id_tipoitem + " order by nome ";
+			$.sql.query(q,{ 
+				success:function(result){
+					var _title = tipo;
+					var _options = [];
+					var _values = [];
+					var _checkeds = [];
+					for (var i = 0; i < result.length; i++) {	
+						_options.push( toTitleCase( result.item(i)["nome"] ) );
+						_values.push( result.item(i)["id_item"] );
+						if( (", " + itensVistoria).indexOf(", " + result.item(i)["id_item"] ) >= 0 ){
+							_checkeds.push('true');
+						}else{
+							_checkeds.push('false');						
+						}
+					}
+					if(typeof(Android) != "undefined"){
+						Android.js_OpenOptions( 
+							_title,
+							_options.join(','), 
+							_values.join(','), 
+							_checkeds.join(','),
+							"salvaItens"
+						);
+					}else{
+						loading('hide');
+						alert( _title +": "+ _options.join(',') );
+					}
+				}
+			});
+		}
+		function salvaItens(_values, _checkeds){
+			var ids = _values.split(" ").join("").split(",");
+			var checks = _checkeds.split(" ").join("").split(",");
+			for (var i = 0; i < ids.length; i++) {
+				itensVistoria = (", "+ itensVistoria).split(", "+ ids[i] ).join("");
+				itensVistoria = "|||" + itensVistoria;
+				itensVistoria = itensVistoria.split("|||, ").join("");
+				if(checks[i] == "true"){
+					if(itensVistoria != ""){
+						itensVistoria += ", ";
+					}
+					itensVistoria += ids[i];
+				}
+			}
+		}
+		function toTitleCase(str) {
+			str = str.toLowerCase();
+			return str.replace(/(?:^|\s)\w/g, function(match) {
+				return match.toUpperCase();
+			});
+		}
+
+		function montaTipos(){
+			var q = " select case when id_tipoitem = 0 then 999 else 1 end as ordem, id_tipoitem, nome from itenstipo where id_tipoitem != '1' order by ordem, nome ";
+			$.sql.query(q,{ success:function(result){
+				var html = $('#itens').html();
+				totalTipos = result.length;
+				for(var i = 0; i < result.length; i++){
+					item = result.item(i);
+					if( (i % 2) == 0){
+						html += '<tr>';
+					}
+					if((i % 2) == 0 && i == result.length){
+						html += '<td colspan="2" width="100%">';
+					}else{
+						html += '<td width="50%">';					
+					}
+					html += '<a href="javascript:abreItens('+ item['id_tipoitem'] +',\''+ item['nome'] +'\')" data-role="button" style="margin:0px;">'+ item['nome'] +'</a>';
+					html += '</td>';
+					if( (i % 2) == 1){
+						html += '</tr>';
+					}
+				}
+				$('#itens').html(html);
+				finalizou();
+			} } )
+		}
+		var totalTipos = 0;
+		var counter = 0;
+		function finalizou(){		
+			$('#conteudo').trigger('create');
+			document.getElementById('detalhes').style.display = 'block';	
+		}
+		var qtdFotos = 0;
+
+		function salvar(){
+			loading();
+			var dados = {
+				id_ocorrencia:		subparametro,
+				id_vistoria:		parametro,
+				observacaovistoria:	$('#observacaovistoria').val(),
+				//fotovistoria:		$('#img_content').html().split('<img src="data:image/jpeg;base64,').join('').split('" width="400">').join(''),
+				itensVistoria:		itensVistoria
+			};
+			var querys = [];
+			qtdFotos = 0;
+
+			$( "img" ).each(function( index ) {
+				if( $(this).attr('foto') == 'ok' ){
+					qtdFotos++
+				}
+			});
+			var q = "";
+			q += "update vistoriaspontos set ";
+			if( dados.itensVistoria != "" || qtdFotos > 0 ){
+				q += "	gerar_os = 'true', ";
+			}else{
+				q += "	gerar_os = 'false', ";
+			}
+			q += "	observacaovistoria = '"+ dados.observacaovistoria +"', ";
+			//q += "	fotovistoria = '"+ dados.fotovistoria +"', ";
+			q += "	itensVistoria = '"+ dados.itensVistoria +"', ";
+			q += "	dt_lastupdate = '"+ getDate() +"', ";
+			q += "	vistoriada = 'true' ";
+			q += " where id_ocorrencia = " + dados.id_ocorrencia;
+			querys.push(q);
+			$( "img" ).each(function( index ) {
+				if( $(this).attr('foto') == 'ok' ){
+					var nq = "";
+					nq += " insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp, uploaded) values( ";
+					nq += " '"+ $(this).attr('src').split('data:image/jpeg;base64,').join('') +"', ";
+					nq += " '"+ $(this).attr('data') +"', ";
+					nq += " '"+ $(this).attr('id_item') +"', ";
+					nq += " '"+ $(this).attr('id_vistoria') +"', ";
+					nq += " '"+ $(this).attr('id_os') +"', ";
+					nq += " '"+ $(this).attr('id_ocorrencia') +"', ";
+					nq += " '"+ $(this).attr('id_ponto') +"', ";
+					nq += " '"+ $(this).attr('nome') +"', ";
+					nq += " '"+ $(this).attr('stamp') +"', ";
+					nq += " '"+ $(this).attr('uploaded') +"' ";
+					nq += " ) ";
+					querys.push(nq);
+				}
+			});
+			var contador = 0
+			$.sql.query(querys,{ success:function(result){
+				contador++ 
+				if(querys.length == contador){
+					checkConnection(updateOnline,continua);
+				}
+			} } );	
+		}
+
+		function updateOnline(){
+			loading();
+			var dados = {
+				id_ocorrencia:		subparametro,
+				id_vistoria:		parametro,
+				observacaovistoria:	$('#observacaovistoria').val(),
+				//fotomanutencao:	$('#img_content').html().split('<img src="data:image/jpeg;base64,').join('').split('" width="400">').join(''),
+				itensVistoria:		itensVistoria
+			};
+			var q = "";
+			q += " update ocorrencias set ";
+			q += "	observacaovistoria = '"+ dados.observacaovistoria +"', ";
+			//q += "	fotomanutencao = '"+ dados.fotomanutencao +"', ";
+			if( dados.itensVistoria != "" || qtdFotos > 0 ){
+				q += "	gerar_os = 'true', ";
+			}else{
+				q += "	gerar_os = 'false', ";
+			}
+			q += "	itensVistoria = '"+ dados.itensVistoria +"', ";
+			q += "	dt_lastupdate = '"+ getDate() +"', ";
+			q += "	vistoriada = 'true' ";
+			q += " where id_ocorrencia = " + dados.id_ocorrencia + ";";
+
+			$( "img" ).each(function( index ) {
+				if( $(this).attr('foto') == 'ok' && $(this).attr('uploaded') != "ok" ){
+					var nq = "";
+					nq += " insert into fotografias (base64, data, id_item, id_vistoria, id_os, id_ocorrencia, id_ponto, nome, stamp) values( ";
+					nq += " '"+ $(this).attr('src').split('data:image/jpeg;base64,').join('') +"', ";
+					nq += " '"+ $(this).attr('data') +"', ";
+					nq += " '"+ $(this).attr('id_item') +"', ";
+					nq += " '"+ $(this).attr('id_vistoria') +"', ";
+					nq += " '"+ $(this).attr('id_os') +"', ";
+					nq += " '"+ $(this).attr('id_ocorrencia') +"', ";
+					nq += " '"+ $(this).attr('id_ponto') +"', ";
+					nq += " '"+ $(this).attr('nome') +"', ";
+					nq += " '"+ $(this).attr('stamp') +"' ";
+					nq += " ); ";
+
+					q += nq;
+				}
+			});
+			$.ajax({
+				type: "POST",
+				url: URL_WEBSERVICE + "exec_query.php?rand=" +(new Date().getTime()),
+				data: {
+					query:   q
+				},
+				success: function(json){
+					//alert('Retorno: ' + json);		
+					apagaFotos();
+				},
+				error: function(xmlHttpRequest, textStatus, errorThrow){
+					// Erro 324:net::ERR_EMPTY_RESPONSE					
+					if(xmlHttpRequest.readyState == 0 || xmlHttpRequest.status == 0) {
+						alert(textStatus + ': '+ errorThrow);
+					}
+					continua();
+				}
+			});
+		}
+		function apagaFotos(){
+			$.sql.query( "update fotografias set uploaded = 'true' where id_ocorrencia = '" + subparametro + "'" ,{ 
+				success:function(result){
+					continua();
+				} 
+			});
+		}
+
+		function continua(){
+			abreTela('vistoria_lista_enderecos', parametro);
+		}
+		function man_tiraFoto(){
+			//tiraFoto(nome, id_ponto, id_ocorrencia, id_os, id_vistoria, id_item, otima, simak){
+			var id_item = "0";
+			var nome = subparametro +"_"+ id_item;
+			tiraFoto( nome, $('#id_ponto').val(), subparametro, '0', parametro, id_item, $('#otima').val(), $('#simak').val() );
+		}
+	</script>
+	<input type="hidden" name="otima" id="otima" value=""/>
+	<input type="hidden" name="simak" id="simak" value=""/>
+	<div id="detalhes" data-role="content" style="display:none">
+		<h4 align="center" name="txt_detalhes" id="txt_detalhes">&nbsp;</h4>
+		<h3 align="center" name="txt_titulo" id="txt_titulo">&nbsp;</h3>
+		<div data-role="fieldcontain">
+            <label for="itens">Opções de Vistorias:</label>
+			<table width="100%" border="0" cellspacing="10" id="itens" name="itens"></table>
+        </div>
+		<div data-role="fieldcontain">
+            <label for="observacaovistoria">Observações:</label>
+            <textarea name="observacaovistoria" id="observacaovistoria" placeholder="" style="height:80px"></textarea>
+        </div>
+		<div data-role="fieldcontain">
+			<div id="img_content" name="img_content" align="center"></div>
+        </div>
+	</div>
+	<div id="novo_rodape" name="novo_rodape">
+		<div class="ui-grid-b" >
+			<div class="ui-block-a" style="padding-left:5px">
+				<a data-role="button" name="btVoltar" id="btVoltar" onclick="abreTela('vistoria_lista_enderecos',parametro)" data-icon="back" data-iconpos="top" data-mini="true">
+					Voltar
+				</a>
+			</div>
+			<div class="ui-block-b">
+				<a data-role="button" onclick="man_tiraFoto()" data-mini="true" data-icon="star" data-iconpos="top">
+					Fotografia
+				</a>
+			</div>
+			<div class="ui-block-c">
+				<a data-role="button" onclick="salvar()" data-icon="check" data-iconpos="top" data-mini="true">
+					Concluir
+				</a>
+			</div>
+		</div>
+    </div>
+</div>
