@@ -1,7 +1,12 @@
 package net.decaedro.tie;
 
 import android.app.*;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.*;
+import android.util.Log;
 import android.view.*;
 import android.webkit.*;
 import android.content.*;
@@ -46,7 +51,14 @@ public class MainActivity extends DKActivity {
 					}catch(Exception e){
 						showMsg( "Erro com EXIF: " + e.toString() );
 					}
-					myWebView.loadUrl("javascript:cb_tiraFoto('" + path +"')");
+					String b64 = getBase64( path );
+					WebviewJSStr = "javascript:cb_tiraFoto('" + b64 +"')";
+					activity.runOnUiThread(new Runnable() {
+						@Override
+						public void run() {
+							myWebView.loadUrl( WebviewJSStr );
+						}
+					});
 				} else {
 					return;
 				}
@@ -54,18 +66,38 @@ public class MainActivity extends DKActivity {
 				return;
 		}
 	}
+	public byte[] resizeImage(FileInputStream mFileInputStream){
+		/*
+		BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+		bmOptions.inJustDecodeBounds = true;
+		BitmapFactory.decodeStream(mFileInputStream, null, bmOptions);
+		int photoW = bmOptions.outWidth;
+		int photoH = bmOptions.outHeight;
+				int scaleFactor = 1;
+		scaleFactor = Math.min(photoW/640, photoH/640);
+		bmOptions.inJustDecodeBounds = false;
+		bmOptions.inSampleSize = scaleFactor;
+		bmOptions.inPurgeable = true; //Deprecated API 21
+		Bitmap bmp=BitmapFactory.decodeStream(mFileInputStream, null, bmOptions);
+		*/
+		BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+		bmOptions.inJustDecodeBounds = false;
+		bmOptions.inSampleSize = 5;
+		bmOptions.inPurgeable = true; //Deprecated API 21
+		Bitmap bmp=BitmapFactory.decodeStream(mFileInputStream, null, bmOptions);
+		int photoW = bmOptions.outWidth;
+		int photoH = bmOptions.outHeight;
 
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		bmp.compress(Bitmap.CompressFormat.JPEG, 70, stream);
+		byte[] byteArray = stream.toByteArray();
+		return byteArray;
+	}
 	public String getBase64( String path ){
 		String encodedImage = "";
 		try{
 			FileInputStream mFileInputStream = new FileInputStream( path );
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            byte[] b = new byte[1024]; 
-            int bytesRead = 0;
-            while ((bytesRead = mFileInputStream.read(b)) != -1) {
-               bos.write(b, 0, bytesRead);
-            }
-            byte[] ba = bos.toByteArray();
+            byte[] ba = resizeImage(mFileInputStream);
             encodedImage = Base64.encodeToString(ba, Base64.DEFAULT);
 		} catch ( Exception e ){
 			encodedImage = "ERRO: " + e.toString();
@@ -75,7 +107,7 @@ public class MainActivity extends DKActivity {
 				encodedImage = "ERRO: Sem espaço no cartão de memória";
 			}
 		}
-		if(encodedImage.length() > 600000){
+		if(encodedImage.length() > 1000000){
 			encodedImage = "ERRO: Resolução/Qualidade da imagem não suportada\n\nAltere a qualidade para Normal e o tamanho para 640x480(0.3MP)";
 		}
 		if( encodedImage.equals("") ){
@@ -94,7 +126,12 @@ public class MainActivity extends DKActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case 1:
-				myWebView.loadUrl( php_endereco );
+				activity.runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						myWebView.loadUrl( php_endereco );
+					}
+				});
 				return true;
 			case 2:
 				String _msg = "Este aplicativo é de propriedade única e exclusiva \nDecaedro Studio\n\n Versão: " + strVersionName;
@@ -112,7 +149,12 @@ public class MainActivity extends DKActivity {
 		setContentView(R.layout.main);
 		myWebView = DKWebView.create( (Activity) this, this, (WebView) findViewById(R.id.webView1), userAgent, true );
         myWebView.addJavascriptInterface(new JavaScriptInterface(this), "Android");
-		myWebView.loadUrl( php_endereco );  
+		activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				myWebView.loadUrl( php_endereco );
+			}
+		});
     }
 	public class JavaScriptInterface {
 		Context mContext;
@@ -181,7 +223,7 @@ public class MainActivity extends DKActivity {
 			File photo = new File(folder, filename);
 			cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photo));
 			picUri = Uri.fromFile(photo);
-			MainActivity.this.startActivityForResult(cameraIntent, MainActivity.TAKE_B64_PICTURE);    
+			MainActivity.this.startActivityForResult(cameraIntent, MainActivity.TAKE_B64_PICTURE);
 		}
 		@JavascriptInterface
 		public void js_OpenOptions(String _title, String _options, String _values, String _checkeds, String _callback ){
@@ -216,7 +258,13 @@ public class MainActivity extends DKActivity {
 							}
 							retCheckeds += new Boolean(checkeds[i]).toString();
 						}
-						myWebView.loadUrl("javascript:"+ retCallback +"('"+ retValues +"','"+ retCheckeds +"')");					
+						WebviewJSStr = "javascript:"+ retCallback +"('"+ retValues +"','"+ retCheckeds +"')";
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								myWebView.loadUrl( WebviewJSStr );
+							}
+						});
 					}
 				})
 				.setNegativeButton("Cancelar",

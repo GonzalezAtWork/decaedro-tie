@@ -21,7 +21,8 @@ import java.io.*;
 
 public class DKActivity extends Activity
 {
-	protected WebView myWebView;
+	public WebView myWebView;
+	public String WebviewJSStr;
 	protected String LOG_TAG = "MainActivity";
 	private String userAgent = "10edroTie";
 
