@@ -108,7 +108,7 @@ public class DKActivity extends Activity
 	}
 	public void abreAutentica(){
 		PackageManager pm = getPackageManager();
-		String packageName = "net.decaedro.autentica";
+		String packageName = "net.decaedro.tie";
 		try {
 			PackageInfo info=pm.getPackageInfo(packageName,PackageManager.GET_META_DATA);
 			Intent intent = new Intent(Settings.ACTION_ADD_ACCOUNT);

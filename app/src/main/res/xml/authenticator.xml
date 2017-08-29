@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
+                       android:accountType="net.decaedro.auth_example"
+                       android:icon="@drawable/ic_locker"
+                       android:smallIcon="@drawable/ic_locker"
+                       android:label="@string/label"
+                       android:accountPreferences="@xml/prefs"/>

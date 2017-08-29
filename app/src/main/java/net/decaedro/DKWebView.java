@@ -3,6 +3,8 @@ package net.decaedro;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.os.Build;
+import android.view.View;
 import android.webkit.*;
 import android.widget.Toast;
 
@@ -12,21 +14,34 @@ public class DKWebView {
 		WebView myWebView = wb;
 		activity = _activity;
 		myWebView.setWebChromeClient((WebChromeClient) new KWebChromeClient( activity, context ));
-		myWebView.getSettings().setLoadsImagesAutomatically(true);
-		myWebView.getSettings().setRenderPriority(WebSettings.RenderPriority.HIGH);
-		myWebView.getSettings().setSupportZoom(false);
-		myWebView.getSettings().setUserAgentString( myWebView.getSettings().getUserAgentString() + " ("+ UserAgent +")" );
-		myWebView.getSettings().setAllowFileAccess(true);
-		myWebView.getSettings().setAllowContentAccess(true);
-		myWebView.getSettings().setAppCacheEnabled(true);
-		myWebView.getSettings().setAppCachePath("/data/data/"+ context.getPackageName() +"/cache/");
-		myWebView.getSettings().setAppCacheMaxSize(5*1024*1024);
-		myWebView.getSettings().setJavaScriptEnabled(true);
-		myWebView.getSettings().setDatabaseEnabled(true);
-		myWebView.getSettings().setDatabasePath("/data/data/"+ context.getPackageName() +"/databases/");
-		myWebView.getSettings().setDomStorageEnabled(true);
-		myWebView.getSettings().setLoadWithOverviewMode(true);
-		myWebView.getSettings().setUseWideViewPort(false);
+		WebSettings settings = myWebView.getSettings();
+		settings.setLoadsImagesAutomatically(true);
+		settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+		settings.setSupportZoom(true);
+		settings.setBuiltInZoomControls(false);
+		settings.setUserAgentString( myWebView.getSettings().getUserAgentString() + " ("+ UserAgent +")" );
+		settings.setAllowFileAccess(true);
+		settings.setAllowContentAccess(true);
+		settings.setAppCacheEnabled(true);
+		settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
+		settings.setAppCachePath("/data/data/"+ context.getPackageName() +"/cache/");
+		settings.setAppCacheMaxSize(5*1024*1024);
+		settings.setJavaScriptEnabled(true);
+		settings.setDatabaseEnabled(true);
+		settings.setDatabasePath("/data/data/"+ context.getPackageName() +"/databases/");
+		settings.setDomStorageEnabled(true);
+		settings.setLoadWithOverviewMode(true);
+		settings.setUseWideViewPort(true);
+		settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+		myWebView.setScrollBarStyle(WebView.SCROLLBARS_OUTSIDE_OVERLAY);
+		myWebView.setScrollbarFadingEnabled(true);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+			myWebView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
+		} else {
+			myWebView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+		}
+
 		myWebView.setWebViewClient((WebViewClient) new DKWebViewClient( activity, context, quitOnError ));
 		//myWebView.addJavascriptInterface(new JavaScriptInterface( context ), "Android");
 		return myWebView;
